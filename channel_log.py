@@ -19,6 +19,14 @@ def log_message(message):
 	cl.log(message.id, message.timestamp.strftime('%H:%M:%S'),
 			message.author.display_name, message.clean_content)
 
+def last_message_id(abspath):
+	with open(abspath, 'rb') as f:
+		contents = lz4framed.decompress(f.read())
+		if contents[-1] != 0:
+			raise Exception('corrupt log file', abspath)
+		last_message = contents[contents.rfind(b'\0', 0, -1) + 1:-1]
+		return last_message.split(b'|', 1)[0].decode()
+
 class ChannelLog:
 	def __init__(self, channel_path, date):
 		abspath = path.join(config.log_dir, channel_path, date.strftime('%Y-%m-%d'))

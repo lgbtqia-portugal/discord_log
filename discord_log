@@ -18,27 +18,35 @@ async def on_ready():
 	print('logged in as', client.user.name, client.user.id)
 	for channel in client.get_all_channels():
 		if channel.type == discord.ChannelType.text:
-			if channel.id != '109469702010478592': continue
 			asyncio.ensure_future(get_history(channel))
-			break
 
 @client.event
 async def on_message(message):
 	channel_log.log_message(message)
 
 async def get_history(channel):
-	print('getting history for', channel.server.name, channel.name)
-	channel_path = path.join(config.log_dir, channel.server.name, channel.name)
+	channel_path = path.join(channel.server.name, channel.name)
+	abspath = path.join(config.log_dir, channel_path)
+	print('getting history for', channel_path)
+	last_message_id = 0
 	try:
-		os.makedirs(channel_path)
+		os.makedirs(abspath)
 	except OSError as e:
 		if e.errno != errno.EEXIST:
 			raise
-	last_message = discord.Message(id=0)
+		log_files = os.listdir(abspath)
+		if log_files:
+			last_message_id = channel_log.last_message_id(path.join(abspath, max(log_files)))
+	last_message = discord.Message(id=last_message_id)
+
 	while True:
-		messages = await alist(client.logs_from(channel, after=last_message))
+		try:
+			messages = await alist(client.logs_from(channel, after=last_message))
+		except discord.errors.Forbidden:
+			print('no history permission for', channel_path)
+			break
 		if not messages:
-			print('reached end of chat history')
+			print('reached end of chat history for', channel_path)
 			break
 		messages.reverse() # messages come in reverse order
 		for message in messages:
