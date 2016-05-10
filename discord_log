@@ -9,12 +9,13 @@ from os import path
 import discord
 
 import config
+import channel_log
 
 client = discord.Client()
 
 @client.event
 async def on_ready():
-	print('Logged in as', client.user.name, client.user.id)
+	print('logged in as', client.user.name, client.user.id)
 	for channel in client.get_all_channels():
 		if channel.type == discord.ChannelType.text:
 			if channel.id != '109469702010478592': continue
@@ -23,11 +24,7 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-	log_message(message)
-
-def log_message(message):
-	print(path.join(message.server.name, message.channel.name, message.timestamp.strftime('%Y-%m-%d')))
-	print('[%s] %s > %s' % (message.timestamp.strftime('%Y-%m-%d'), message.author.display_name, message.clean_content))
+	channel_log.log_message(message)
 
 async def get_history(channel):
 	print('getting history for', channel.server.name, channel.name)
@@ -37,20 +34,29 @@ async def get_history(channel):
 	except OSError as e:
 		if e.errno != errno.EEXIST:
 			raise
-	last_message = datetime.datetime.min
-	fetched_time = datetime.datetime.max
-	fetched = None
-	while fetched_time > last_message:
-		print('fetching')
-		count = 0
-		async for message in client.logs_from(channel, limit=10, before=fetched):
-			log_message(message)
-			count += 1
-		if count == 0:
-			print('reached beginning of chat history')
+	last_message = discord.Message(id=0)
+	while True:
+		messages = await alist(client.logs_from(channel, after=last_message))
+		if not messages:
+			print('reached end of chat history')
 			break
-		fetched_time = message.timestamp
-		fetched = message
+		messages.reverse() # messages come in reverse order
+		for message in messages:
+			channel_log.log_message(message)
+		last_message = message
+
+async def alist(aiterable):
+	l = []
+	async for item in aiterable:
+		l.append(item)
+	return l
 
 if __name__ == '__main__':
-	client.run(config.token)
+	try:
+		client.loop.run_until_complete(client.start(config.token))
+	except KeyboardInterrupt:
+		client.loop.run_until_complete(client.logout())
+	finally:
+		for cl in channel_log.channel_logs.values():
+			cl.close()
+		client.loop.close()
