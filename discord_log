@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import asyncio
+import datetime
+import errno
+import os
 from os import path
 
 import discord
@@ -11,11 +15,42 @@ client = discord.Client()
 @client.event
 async def on_ready():
 	print('Logged in as', client.user.name, client.user.id)
+	for channel in client.get_all_channels():
+		if channel.type == discord.ChannelType.text:
+			if channel.id != '109469702010478592': continue
+			asyncio.ensure_future(get_history(channel))
+			break
 
 @client.event
 async def on_message(message):
+	log_message(message)
+
+def log_message(message):
 	print(path.join(message.server.name, message.channel.name, message.timestamp.strftime('%Y-%m-%d')))
 	print('[%s] %s > %s' % (message.timestamp.strftime('%Y-%m-%d'), message.author.display_name, message.clean_content))
+
+async def get_history(channel):
+	print('getting history for', channel.server.name, channel.name)
+	channel_path = path.join(config.log_dir, channel.server.name, channel.name)
+	try:
+		os.makedirs(channel_path)
+	except OSError as e:
+		if e.errno != errno.EEXIST:
+			raise
+	last_message = datetime.datetime.min
+	fetched_time = datetime.datetime.max
+	fetched = None
+	while fetched_time > last_message:
+		print('fetching')
+		count = 0
+		async for message in client.logs_from(channel, limit=10, before=fetched):
+			log_message(message)
+			count += 1
+		if count == 0:
+			print('reached beginning of chat history')
+			break
+		fetched_time = message.timestamp
+		fetched = message
 
 if __name__ == '__main__':
 	client.run(config.token)
