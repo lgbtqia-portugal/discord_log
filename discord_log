@@ -1,0 +1,21 @@
+#!/usr/bin/env python3
+
+from os import path
+
+import discord
+
+import config
+
+client = discord.Client()
+
+@client.event
+async def on_ready():
+	print('Logged in as', client.user.name, client.user.id)
+
+@client.event
+async def on_message(message):
+	print(path.join(message.server.name, message.channel.name, message.timestamp.strftime('%Y-%m-%d')))
+	print('[%s] %s > %s' % (message.timestamp.strftime('%Y-%m-%d'), message.author.display_name, message.clean_content))
+
+if __name__ == '__main__':
+	client.run(config.token)
