@@ -1,3 +1,5 @@
+import datetime
+import os
 from os import path
 
 import lz4framed
@@ -26,6 +28,33 @@ def last_message_id(abspath):
 			raise Exception('corrupt log file', abspath)
 		last_message = contents[contents.rfind(b'\0', 0, -1) + 1:-1]
 		return last_message.split(b'|', 1)[0].decode()
+
+def search(server, channel, query):
+	channel_dir = path.join(config.log_dir, server, channel)
+	query = query.casefold()
+	results = []
+	for filename in sorted(os.listdir(channel_dir), reverse=True):
+		abspath = path.join(channel_dir, filename)
+		with open(abspath, 'rb') as f:
+			try:
+				contents = lz4framed.decompress(f.read())
+			except lz4framed.Lz4FramedNoDataError:
+				continue
+			if contents[-1] != 0:
+				raise Exception('corrupt log file', abspath)
+			lines = contents.split(b'\0')
+			for line in lines[:-1]:
+				_, time, user, text = line.split(b'|', 3)
+				text = text.decode('utf-8')
+				if query in text.casefold().split():
+					time_str = '%s %s' % (filename, time.decode('utf-8'))
+					dt = datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
+					results.append((dt, user.decode('utf-8'), text))
+					if len(results) == 5:
+						break
+		if len(results) == 5:
+			break
+	return results
 
 class ChannelLog:
 	def __init__(self, channel_path, date):

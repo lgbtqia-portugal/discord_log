@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import asyncio
-import datetime
 import errno
 import os
 from os import path
@@ -23,6 +22,16 @@ async def on_ready():
 @client.event
 async def on_message(message):
 	channel_log.log_message(message)
+	if message.clean_content.startswith('!search '):
+		query = message.clean_content[8:]
+		results = channel_log.search(message.server.name, message.channel.name, query)
+		if not results:
+			await client.send_message(message.channel, 'no results found')
+			return
+		output = []
+		for time, user, content in results:
+			output.append('[%s] %s> %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), user, content))
+		await client.send_message(message.channel, 'results:\n' + '\n'.join(output))
 
 async def get_history(channel):
 	channel_path = path.join(channel.server.name, channel.name)
