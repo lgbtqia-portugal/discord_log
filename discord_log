@@ -30,6 +30,8 @@ async def on_message(message):
 			return
 		output = []
 		for time, user, content in results:
+			if len(content) > 253:
+				content[:250]  + '...'
 			output.append('[%s] %s> %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), user, content))
 		await client.send_message(message.channel, 'results:\n' + '\n'.join(output))
 

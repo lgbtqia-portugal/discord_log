@@ -31,7 +31,7 @@ def last_message_id(abspath):
 
 def search(server, channel, query):
 	channel_dir = path.join(config.log_dir, server, channel)
-	query = query.casefold()
+	query = query.casefold().split()
 	results = []
 	for filename in sorted(os.listdir(channel_dir), reverse=True):
 		abspath = path.join(channel_dir, filename)
@@ -46,7 +46,11 @@ def search(server, channel, query):
 			for line in lines[:-1]:
 				_, time, user, text = line.split(b'|', 3)
 				text = text.decode('utf-8')
-				if query in text.casefold().split():
+				split = text.casefold().split()
+				for term in query:
+					if term not in split:
+						break
+				else: # found all terms
 					time_str = '%s %s' % (filename, time.decode('utf-8'))
 					dt = datetime.datetime.strptime(time_str, '%Y-%m-%d %H:%M:%S')
 					results.append((dt, user.decode('utf-8'), text))
