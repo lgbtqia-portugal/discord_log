@@ -15,9 +15,15 @@ client = discord.Client()
 @client.event
 async def on_ready():
 	print('logged in as', client.user.name, client.user.id)
+	coros = []
 	for channel in client.get_all_channels():
 		if channel.type == discord.ChannelType.text:
-			asyncio.ensure_future(get_history(channel))
+			coros.append(get_history(channel))
+	excs = await asyncio.gather(*coros, return_exceptions=True)
+	for exc in excs:
+		if exc:
+			raise exc
+	channel_log.flush_buffered()
 
 @client.event
 async def on_message(message):
@@ -61,7 +67,7 @@ async def get_history(channel):
 			break
 		messages.reverse() # messages come in reverse order
 		for message in messages:
-			channel_log.log_message(message)
+			channel_log.log_message(message, old=True)
 		last_message = message
 
 async def alist(aiterable):
