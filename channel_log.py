@@ -67,7 +67,7 @@ def search(server, channel, query):
 		for line in lines[:-1]:
 			_, time, user, text = line.split(b'|', 3)
 			text = text.decode('utf-8')
-			split = text.casefold().split()
+			split = text.casefold().split(' ') # python is stupid and ''.split() == []
 			if split[0] == '!search' or user == b'log':
 				continue
 			for term in query:
