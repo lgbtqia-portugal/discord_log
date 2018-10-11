@@ -1,48 +1,34 @@
 #!/usr/bin/env python3
 
-import asyncio
 import errno
 import os
 from os import path
 
-import discord
-
-import config
+import api_client
 import channel_log
+import config
 
-client = discord.Client()
+def main():
+	client = api_client.APIClient()
+	channels = {}
+	users = {}
+	for channel in client.get_channels():
+		channels[channel.id] = channel.name
+		get_history(channel, users)
+	channel_log.flush()
 
-@client.event
-async def on_ready():
-	print('logged in as', client.user.name, client.user.id)
-	coros = []
-	for channel in client.get_all_channels():
-		if channel.type == discord.ChannelType.text:
-			coros.append(get_history(channel))
-	excs = await asyncio.gather(*coros, return_exceptions=True)
-	for exc in excs:
-		if exc:
-			raise exc
-	channel_log.flush_buffered()
+	channels_path = path.join(config.log_dir, sanitize_name(channel.guild_name), 'channels')
+	with open(channels_path, 'bw') as f:
+		for channel_id, name in channels.items():
+			f.write(channel_id.encode() + b'|' + name.encode('utf-8') + b'\n')
 
-@client.event
-async def on_message(message):
-	channel_log.log_message(message)
-	if message.clean_content.startswith('!search '):
-		query = message.clean_content[8:]
-		results = channel_log.search(message.server.name, message.channel.name, query)
-		if not results:
-			await client.send_message(message.channel, 'no results found')
-			return
-		output = []
-		for time, user, content in results:
-			if len(content) > 253:
-				content[:250]  + '...'
-			output.append('[%s] %s> %s' % (time.strftime('%Y-%m-%d %H:%M:%S'), user, content))
-		await client.send_message(message.channel, 'results:\n' + '\n'.join(output))
+	users_path = path.join(config.log_dir, sanitize_name(channel.guild_name), 'users')
+	with open(users_path, 'bw') as f:
+		for user_id, username in users.items():
+			f.write(user_id.encode() + b'|' + username.encode('utf-8') + b'\n')
 
-async def get_history(channel):
-	channel_path = path.join(channel.server.name, channel.name)
+def get_history(channel, users):
+	channel_path = path.join(sanitize_name(channel.guild_name), sanitize_name(channel.name))
 	abspath = path.join(config.log_dir, channel_path)
 	print('getting history for', channel_path)
 	last_message_id = 0
@@ -54,34 +40,17 @@ async def get_history(channel):
 		log_files = os.listdir(abspath)
 		if log_files:
 			last_message_id = channel_log.last_message_id(path.join(abspath, max(log_files)))
-	last_message = discord.Message(id=last_message_id)
+			print('continuing from', last_message_id)
 
-	while True:
-		try:
-			messages = await alist(client.logs_from(channel, after=last_message))
-		except discord.errors.Forbidden:
-			print('no history permission for', channel_path)
-			break
-		if not messages:
-			print('reached end of chat history for', channel_path)
-			break
-		messages.reverse() # messages come in reverse order
-		for message in messages:
-			channel_log.log_message(message, old=True)
-		last_message = message
+	client = api_client.APIClient()
+	for message in client.get_messages(channel.id, after_id=last_message_id):
+		channel_log.log_message(channel_path, message)
+		user = message['author']
+		users[user['id']] = user['username']
+	print('reached end of chat history for', channel_path)
 
-async def alist(aiterable):
-	l = []
-	async for item in aiterable:
-		l.append(item)
-	return l
+def sanitize_name(name):
+	return name.replace('/', '_')
 
 if __name__ == '__main__':
-	try:
-		client.loop.run_until_complete(client.start(config.token))
-	except KeyboardInterrupt:
-		client.loop.run_until_complete(client.logout())
-	finally:
-		for cl in channel_log.channel_logs.values():
-			cl.close()
-		client.loop.close()
+	main()
