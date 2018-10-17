@@ -4,6 +4,8 @@ import errno
 import os
 from os import path
 
+import requests
+
 import api_client
 import channel_log
 import config
@@ -14,7 +16,11 @@ def main():
 	users = {}
 	for channel in client.get_channels():
 		channels[channel.id] = channel.name
-		get_history(channel, users)
+		try:
+			get_history(channel, users)
+		except requests.exceptions.HTTPError as e:
+			if e.response.status_code != 403:
+				raise
 	channel_log.flush()
 
 	channels_path = path.join(config.log_dir, sanitize_name(channel.guild_name), 'channels')
