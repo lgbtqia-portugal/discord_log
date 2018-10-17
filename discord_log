@@ -9,29 +9,25 @@ import requests
 import api_client
 import channel_log
 import config
+import metadata
+from metadata import sanitize_name
 
 def main():
 	client = api_client.APIClient()
-	channels = {}
 	users = {}
-	for channel in client.get_channels():
-		channels[channel.id] = channel.name
-		try:
-			get_history(channel, users)
-		except requests.exceptions.HTTPError as e:
-			if e.response.status_code != 403:
-				raise
+	channels = {}
+	try:
+		for channel in client.get_channels():
+			channels[channel.id] = (channel.guild_id, channel.name)
+			try:
+				get_history(channel, users)
+			except requests.exceptions.HTTPError as e:
+				if e.response.status_code != 403:
+					raise
+	except KeyboardInterrupt:
+		print('caught SIGINT; flushing...')
 	channel_log.flush()
-
-	channels_path = path.join(config.log_dir, sanitize_name(channel.guild_name), 'channels')
-	with open(channels_path, 'bw') as f:
-		for channel_id, name in channels.items():
-			f.write(channel_id.encode() + b'|' + name.encode('utf-8') + b'\n')
-
-	users_path = path.join(config.log_dir, sanitize_name(channel.guild_name), 'users')
-	with open(users_path, 'bw') as f:
-		for user_id, username in users.items():
-			f.write(user_id.encode() + b'|' + username.encode('utf-8') + b'\n')
+	metadata.write(channels, users)
 
 def get_history(channel, users):
 	channel_path = path.join(sanitize_name(channel.guild_name), sanitize_name(channel.name))
@@ -54,9 +50,6 @@ def get_history(channel, users):
 		user = message['author']
 		users[user['id']] = user['username']
 	print('reached end of chat history for', channel_path)
-
-def sanitize_name(name):
-	return name.replace('/', '_')
 
 if __name__ == '__main__':
 	main()
