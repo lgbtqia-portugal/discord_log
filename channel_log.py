@@ -10,7 +10,10 @@ import config
 channel_logs = {}
 
 def log_message(channel_path, message):
-	timestamp = datetime.datetime.fromisoformat(message['timestamp'])
+	try:
+		timestamp = datetime.datetime.strptime(message['timestamp'], '%Y-%m-%dT%H:%M:%S.%f+00:00')
+	except ValueError:
+		timestamp = datetime.datetime.strptime(message['timestamp'], '%Y-%m-%dT%H:%M:%S+00:00')
 	date = timestamp.date()
 
 	cl = channel_logs.get(channel_path)
