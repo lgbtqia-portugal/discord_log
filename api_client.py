@@ -1,3 +1,5 @@
+import enum
+
 import requests
 
 import config
@@ -18,6 +20,8 @@ class APIClient:
 		for guild in guilds:
 			channels = self.get('/guilds/%s/channels' % guild['id'])
 			for channel in channels:
+				if channel['type'] != ChannelType.GUILD_TEXT:
+					continue
 				yield Channel(channel['id'], channel['name'], guild['id'], guild['name'])
 
 	def get_messages(self, channel_id, after_id):
@@ -36,3 +40,6 @@ class Channel:
 		self.name = channel_name
 		self.guild_id = guild_id
 		self.guild_name = guild_name
+
+class ChannelType(enum.IntEnum):
+	GUILD_TEXT = 0
