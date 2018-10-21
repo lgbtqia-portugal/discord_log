@@ -14,10 +14,12 @@ from metadata import sanitize_name
 
 def main():
 	client = api_client.APIClient()
+	guilds = {}
 	users = {}
 	channels = {}
 	try:
 		for channel in client.get_channels():
+			guilds[channel.guild_id] = channel.guild_name
 			channels[channel.id] = (channel.guild_id, channel.name)
 			try:
 				get_history(channel, users)
@@ -27,7 +29,7 @@ def main():
 	except KeyboardInterrupt:
 		print('caught SIGINT; flushing...')
 	channel_log.flush()
-	metadata.write(channels, users)
+	metadata.write(guilds, channels, users)
 
 def get_history(channel, users):
 	channel_path = path.join(sanitize_name(channel.guild_name), sanitize_name(channel.name))

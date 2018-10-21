@@ -2,7 +2,21 @@ from os import path
 
 import config
 
-def write(new_channels, new_users):
+def write(new_guilds, new_channels, new_users):
+	guilds = {}
+	guilds_path = path.join(config.log_dir, 'guilds')
+	try:
+		with open(guilds_path, 'rb') as f:
+			for line in f:
+				guild_id, guild_name = line.rstrip(b'\n').split(b'|', 2)
+				guilds[guild_id.decode()] = (guild_id.decode(), guild_name.decode('utf-8'))
+	except FileNotFoundError:
+		pass
+	guilds.update(new_guilds)
+	with open(guilds_path, 'wb') as f:
+		for guild_id, name in guilds.items():
+			_write_line(f, guild_id, name)
+
 	channels = {}
 	channels_path = path.join(config.log_dir, 'channels')
 	try:
