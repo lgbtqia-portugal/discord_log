@@ -3,12 +3,14 @@
 import errno
 import os
 from os import path
+import sys
 
 import requests
 
 import api_client
 import channel_log
 import config
+import log
 import metadata
 from metadata import sanitize_name
 
@@ -27,14 +29,14 @@ def main():
 				if e.response.status_code != 403:
 					raise
 	except KeyboardInterrupt:
-		print('caught SIGINT; flushing...')
+		log.write('caught SIGINT; flushing...')
 	channel_log.flush()
 	metadata.write(guilds, channels, users)
 
 def get_history(channel, users):
 	channel_path = path.join(sanitize_name(channel.guild_name), sanitize_name(channel.name))
 	abspath = path.join(config.log_dir, channel_path)
-	print('getting history for', channel_path)
+	log.write('getting history for', channel_path)
 	last_message_id = 0
 	try:
 		os.makedirs(abspath)
@@ -44,14 +46,14 @@ def get_history(channel, users):
 		log_files = os.listdir(abspath)
 		if log_files:
 			last_message_id = channel_log.last_message_id(path.join(abspath, max(log_files)))
-			print('continuing from', last_message_id)
+			log.write('continuing from', last_message_id)
 
 	client = api_client.APIClient()
 	for message in client.get_messages(channel.id, after_id=last_message_id):
 		channel_log.log_message(channel_path, message)
 		user = message['author']
 		users[user['id']] = user['username']
-	print('reached end of chat history for', channel_path)
+	log.write('reached end of chat history for', channel_path)
 
 if __name__ == '__main__':
 	main()

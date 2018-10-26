@@ -6,6 +6,7 @@ from os import path
 import lz4framed
 
 import config
+import log
 
 channel_logs = {}
 
@@ -22,7 +23,7 @@ def log_message(channel_path, message):
 		cl.close()
 		cl = None
 	if cl is None:
-		print('opening', channel_path, date)
+		log.write('opening', channel_path, date)
 		cl = ChannelLog(channel_path, date)
 		channel_logs[channel_path] = cl
 
