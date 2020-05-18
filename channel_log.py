@@ -1,6 +1,4 @@
-from collections import defaultdict
 import datetime
-import os
 from os import path
 
 import lz4framed

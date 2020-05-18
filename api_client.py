@@ -1,4 +1,5 @@
 import enum
+import time
 
 import requests
 
@@ -13,6 +14,8 @@ class APIClient:
 	def get(self, path, params=None):
 		response = self.rs.get('https://discordapp.com/api' + path, params=params)
 		response.raise_for_status()
+		if response.headers['X-RateLimit-Remaining'] == '0':
+			time.sleep(int(response.headers['X-RateLimit-Reset-After']))
 		return response.json()
 
 	def get_channels(self):
@@ -33,6 +36,12 @@ class APIClient:
 			if len(messages) < 100:
 				break
 			after_id = messages[0]['id']
+
+	def get_members(self, guild_id, after=None):
+		return self.get('/guilds/%s/members' % guild_id, params={
+			'limit': 1000,
+			'after': after,
+		})
 
 class Channel:
 	def __init__(self, channel_id, channel_name, guild_id, guild_name):
