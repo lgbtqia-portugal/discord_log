@@ -12,6 +12,8 @@ import api_client
 
 def main():
 	guild_path = sys.argv[1]
+	kick_before = sys.argv[2]
+	client = api_client.APIClient()
 
 	guild_name = path.basename(guild_path)
 	with open(path.normpath(path.join(guild_path, '..', 'guilds')), 'r') as f:
@@ -23,7 +25,7 @@ def main():
 			raise Exception("couldn't find guild ID for %s" % guild_name)
 
 	users = {}
-	for member in iter_members(guild_id):
+	for member in iter_members(client, guild_id):
 		user = User(id=member['user']['id'], name=member['user']['username'],
 				nick=member['nick'], joined=member['joined_at'], last_message='')
 		users[user.id] = user
@@ -34,11 +36,17 @@ def main():
 			full_path = path.join(channel_path, filename)
 			process_file(users, full_path)
 
-	for user in sorted(users.values(), key=operator.attrgetter('last_message')):
+	old_users = [u for u in users.values() if u.last_message < kick_before]
+	old_users.sort(key=operator.attrgetter('last_message'))
+	for user in old_users:
 		print('%-25s %-25s %s\t%s' % (user.name, user.nick or '', user.joined, user.last_message))
+	print()
+	for user in old_users:
+		if input('kick %s? [y/n] ' % user.name) == 'y':
+			client.kick(guild_id, user.id)
+			print('\tkicked')
 
-def iter_members(guild_id):
-	client = api_client.APIClient()
+def iter_members(client, guild_id):
 	after = None
 	while True:
 		members = client.get_members(guild_id, after)

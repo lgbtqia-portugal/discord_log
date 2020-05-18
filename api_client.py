@@ -11,17 +11,18 @@ class APIClient:
 		self.rs.headers['Authorization'] = 'Bot ' + config.token
 		self.rs.headers['User-Agent'] = 'DiscordBot (https://github.com/raylu/discord_log 0.0)'
 
-	def get(self, path, params=None):
-		response = self.rs.get('https://discordapp.com/api' + path, params=params)
+	def request(self, path, method='GET', params=None):
+		response = self.rs.request(method, 'https://discordapp.com/api' + path, params=params)
 		response.raise_for_status()
 		if response.headers['X-RateLimit-Remaining'] == '0':
 			time.sleep(int(response.headers['X-RateLimit-Reset-After']))
-		return response.json()
+		if response.status_code != 204:
+			return response.json()
 
 	def get_channels(self):
-		guilds = self.get('/users/@me/guilds')
+		guilds = self.request('/users/@me/guilds')
 		for guild in guilds:
-			channels = self.get('/guilds/%s/channels' % guild['id'])
+			channels = self.request('/guilds/%s/channels' % guild['id'])
 			for channel in channels:
 				if channel['type'] != ChannelType.GUILD_TEXT:
 					continue
@@ -29,7 +30,7 @@ class APIClient:
 
 	def get_messages(self, channel_id, after_id):
 		while True:
-			messages = self.get('/channels/%s/messages' % channel_id,
+			messages = self.request('/channels/%s/messages' % channel_id,
 					params={'after': after_id, 'limit': 100})
 			for message in reversed(messages): # messages come in reverse order
 				yield message
@@ -38,10 +39,13 @@ class APIClient:
 			after_id = messages[0]['id']
 
 	def get_members(self, guild_id, after=None):
-		return self.get('/guilds/%s/members' % guild_id, params={
+		return self.request('/guilds/%s/members' % guild_id, params={
 			'limit': 1000,
 			'after': after,
 		})
+
+	def kick(self, guild_id, user_id):
+		self.request('/guilds/%s/members/%s' % (guild_id, user_id), method='DELETE')
 
 class Channel:
 	def __init__(self, channel_id, channel_name, guild_id, guild_name):
