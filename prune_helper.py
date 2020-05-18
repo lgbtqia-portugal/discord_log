@@ -67,7 +67,7 @@ def process_file(users, full_path):
 		author_id = author_id.decode('utf-8')
 		user = users.get(author_id)
 		if user is not None:
-			user.last_message = date
+			user.last_message = max(user.last_message, date)
 
 if __name__ == '__main__':
 	main()
