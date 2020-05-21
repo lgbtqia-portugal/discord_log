@@ -14,7 +14,7 @@ class APIClient:
 	def request(self, path, method='GET', params=None):
 		response = self.rs.request(method, 'https://discordapp.com/api' + path, params=params)
 		response.raise_for_status()
-		if response.headers['X-RateLimit-Remaining'] == '0':
+		if response.headers.get('X-RateLimit-Remaining') == '0':
 			time.sleep(int(response.headers['X-RateLimit-Reset-After']))
 		if response.status_code != 204:
 			return response.json()
