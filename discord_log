@@ -19,7 +19,7 @@ def main():
 	users = {}
 	channels = {}
 	try:
-		for channel in client.get_channels():
+		for channel in client.iter_channels():
 			guilds[channel.guild_id] = channel.guild_name
 			channels[channel.id] = (channel.guild_id, channel.name)
 			try:
@@ -48,7 +48,7 @@ def get_history(channel, users):
 			log.write('continuing from', last_message_id)
 
 	client = api_client.APIClient()
-	for message in client.get_messages(channel.id, after_id=last_message_id):
+	for message in client.iter_messages(channel.id, after_id=last_message_id):
 		channel_log.log_message(channel_path, message)
 		user = message['author']
 		users[user['id']] = user['username']

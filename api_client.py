@@ -19,16 +19,19 @@ class APIClient:
 		if response.status_code != 204:
 			return response.json()
 
-	def get_channels(self):
+	def iter_channels(self):
 		guilds = self.request('/users/@me/guilds')
 		for guild in guilds:
-			channels = self.request('/guilds/%s/channels' % guild['id'])
+			channels = self.get_channels(guild['id'])
 			for channel in channels:
 				if channel['type'] != ChannelType.GUILD_TEXT:
 					continue
 				yield Channel(channel['id'], channel['name'], guild['id'], guild['name'])
 
-	def get_messages(self, channel_id, after_id):
+	def get_channels(self, guild_id):
+		return self.request('/guilds/%s/channels' % guild_id)
+
+	def iter_messages(self, channel_id, after_id):
 		while True:
 			messages = self.request('/channels/%s/messages' % channel_id,
 					params={'after': after_id, 'limit': 100})
@@ -43,6 +46,9 @@ class APIClient:
 			'limit': 1000,
 			'after': after,
 		})
+
+	def get_emojis(self, guild_id):
+		return self.request('/guilds/%s/emojis' % guild_id)
 
 	def kick(self, guild_id, user_id):
 		self.request('/guilds/%s/members/%s' % (guild_id, user_id), method='DELETE')
