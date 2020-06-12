@@ -1,3 +1,6 @@
 __pycache__
 /venv
 /config.py
+/emoji_stats.json
+/emoji_user_stats.json
+/users.json

@@ -1,5 +1,6 @@
 import enum
 import time
+import urllib.parse
 
 import requests
 
@@ -49,6 +50,13 @@ class APIClient:
 
 	def get_emojis(self, guild_id):
 		return self.request('/guilds/%s/emojis' % guild_id)
+
+	def get_reactions(self, channel_id, message_id, emoji):
+		# this only gets the first 100 users
+		emoji = urllib.parse.quote_plus(emoji)
+		return self.request('/channels/%s/messages/%s/reactions/%s' % (channel_id, message_id, emoji), params={
+			'limit': 100,
+		})
 
 	def kick(self, guild_id, user_id):
 		self.request('/guilds/%s/members/%s' % (guild_id, user_id), method='DELETE')
