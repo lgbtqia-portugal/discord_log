@@ -13,7 +13,7 @@ class APIClient:
 		self.rs.headers['User-Agent'] = 'DiscordBot (https://github.com/raylu/discord_log 0.0)'
 
 	def request(self, path, method='GET', params=None):
-		response = self.rs.request(method, 'https://discordapp.com/api' + path, params=params)
+		response = self.rs.request(method, 'https://discord.com/api' + path, params=params)
 		response.raise_for_status()
 		if response.headers.get('X-RateLimit-Remaining') == '0':
 			time.sleep(int(response.headers['X-RateLimit-Reset-After']))
