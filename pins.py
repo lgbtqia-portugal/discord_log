@@ -85,6 +85,11 @@ def render():
 	for channel in list(channel_pins.keys()):
 		if len(channel_pins[channel]) == 0:
 			del channel_pins[channel]
+		else:
+			channel_pins[channel] = [
+				pin for pin in channel_pins[channel]
+				if pin['author']['id'] != '165467740113469440'
+			]
 
 	with open('pins/index.jinja2', 'r') as f:
 		template = jinja2.Template(f.read())
