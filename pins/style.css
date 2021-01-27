@@ -16,9 +16,14 @@ section {
 	background-color: #111;
 }
 
+img {
+	display: block;
+}
+
 div.pin {
 	margin: 1em 0;
 	display: flex;
+	align-items: flex-start;
 }
 
 div.pin img.avatar {

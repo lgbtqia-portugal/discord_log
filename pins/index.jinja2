@@ -6,7 +6,7 @@
 </head>
 <body>
 	{% for channel, pins in channel_pins.items() %}
-		<h1>{{ channel }}</h1>
+		<h1>#{{ channel }}</h1>
 		<section>
 			{% for pin in pins %}
 				<div class="pin">
@@ -16,6 +16,11 @@
 						<div class="bottom_content">
 							<span class="username">{{ pin['author']['username'] }}</span>
 							<span class="text">{{ pin['content'] }}</span>
+							{% for embed in pin['embeds'] %}
+								{% if embed['type'] == 'image' %}
+									<img src="{{ embed['url'] }}">
+								{% endif %}
+							{% endfor %}
 						</div>
 					</div>
 				</div>
