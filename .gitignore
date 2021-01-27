@@ -5,4 +5,5 @@ __pycache__
 /emoji_user_stats.json
 /users.json
 /pins.json
+/pins_hydrated.json
 /pins/index.html

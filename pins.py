@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import collections
 import enum
 import json
 import sys
@@ -18,6 +17,8 @@ def main():
 	if sys.argv[1] == 'fetch':
 		guild_id = '109469702010478592'
 		fetch(guild_id)
+	elif sys.argv[1] == 'hydrate':
+		hydrate()
 	elif sys.argv[1] == 'render':
 		render()
 	else:
@@ -53,18 +54,34 @@ def fetch(guild_id):
 		with open('pins.json', 'w') as f:
 			json.dump(pins, f)
 
-def render():
+def hydrate():
 	with open('pins.json', 'r') as f:
 		pins = json.load(f)
+	try:
+		with open('pins_hydrated.json', 'r') as f:
+			channel_pins = json.load(f)
+	except FileNotFoundError:
+		channel_pins = {}
 
-	client = api_client.APIClient()
-	channel_pins = collections.defaultdict(list)
-	for channel_id, channel_data in pins.items():
-		for pin in channel_data['pins']:
-			assert pin['channel_id'] == channel_id
-			message = client.get_message(pin['channel_id'], pin['message_id'])
-			channel_pins[channel_data['name']].append(message)
+	try:
+		client = api_client.APIClient()
+		for channel_id, channel_data in pins.items():
+			channel_messages = channel_pins.setdefault(channel_data['name'], [])
+			hydrated_message_ids = {m['id'] for m in channel_messages}
+			for pin in channel_data['pins']:
+				assert pin['channel_id'] == channel_id
+				if pin['message_id'] not in hydrated_message_ids:
+					message = client.get_message(pin['channel_id'], pin['message_id'])
+					channel_messages.append(message)
+	except KeyboardInterrupt:
+		print('caught ^C')
+	finally:
+		with open('pins_hydrated.json', 'w') as f:
+			json.dump(channel_pins, f)
 
+def render():
+	with open('pins_hydrated.json', 'r') as f:
+		channel_pins = json.load(f)
 	with open('pins/index.jinja2', 'r') as f:
 		template = jinja2.Template(f.read())
 	with open('pins/index.html', 'w') as f:
