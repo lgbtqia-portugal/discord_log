@@ -9,4 +9,19 @@
 				section.classList.add('hidden');
 		});
 	}
+
+	const modal = document.querySelector('#modal');
+	for (const img of document.querySelectorAll('div.pin div.bottom_content img')) {
+		img.addEventListener('click', (event) => {
+			modal.innerHTML = '';
+			const modal_img = document.createElement('img');
+			modal_img.src = event.target.src;
+			modal.appendChild(modal_img);
+			modal.style.display = 'flex';
+		});
+	}
+	modal.addEventListener('click', (event) => {
+		if (event.target === modal)
+			modal.style.display = 'none';
+	});
 })();

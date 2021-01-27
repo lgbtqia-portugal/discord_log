@@ -21,12 +21,17 @@
 									<img src="{{ embed['url'] }}">
 								{% endif %}
 							{% endfor %}
+							{% for attachment in pin['attachments'] %}
+								<img src="{{ attachment['url'] }}">
+							{% endfor %}
 						</div>
 					</div>
 				</div>
 			{% endfor %}
 		</section>
 	{% endfor %}
+
+	<div id="modal"></div>
 
 	<script src="pins.js"></script>
 </body>
