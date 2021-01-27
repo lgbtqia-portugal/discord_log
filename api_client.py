@@ -42,6 +42,9 @@ class APIClient:
 				break
 			after_id = messages[0]['id']
 
+	def get_message(self, channel_id, message_id):
+		return self.request('/channels/%s/messages/%s' % (channel_id, message_id))
+
 	def get_members(self, guild_id, after=None):
 		return self.request('/guilds/%s/members' % guild_id, params={
 			'limit': 1000,

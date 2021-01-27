@@ -1,0 +1,26 @@
+<!doctype html>
+<html>
+<head>
+	<title>pins</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	{% for channel, pins in channel_pins.items() %}
+		<h1>{{ channel }}</h1>
+		<section>
+			{% for pin in pins %}
+				<div class="pin">
+					<img class="avatar" src="https://cdn.discordapp.com/avatars/{{ pin['author']['id'] }}/{{ pin['author']['avatar'] }}.png?size=64">
+					<div class="right_content">
+						<div class="timestamp">{{ pin['timestamp'] }}</div>
+						<div class="bottom_content">
+							<span class="username">{{ pin['author']['username'] }}</span>
+							<span class="text">{{ pin['content'] }}</span>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</section>
+	{% endfor %}
+</body>
+</html>

@@ -3,9 +3,9 @@
 import collections
 import enum
 import json
-import re
 import sys
 
+import jinja2
 import requests
 
 import api_client
@@ -37,6 +37,7 @@ def fetch(guild_id):
 				continue
 			print('#' + channel['name'])
 			channel_data = pins.setdefault(channel['id'], {'last_message': 0, 'pins': []})
+			channel_data['name'] = channel['name']
 			try:
 				for message in client.iter_messages(channel['id'], channel_data['last_message']):
 					if message['type'] == MessageTypes.CHANNEL_PINNED_MESSAGE and \
@@ -53,7 +54,23 @@ def fetch(guild_id):
 			json.dump(pins, f)
 
 def render():
-	pass
+	with open('pins.json', 'r') as f:
+		pins = json.load(f)
+
+	client = api_client.APIClient()
+	channel_pins = collections.defaultdict(list)
+	for channel_id, channel_data in pins.items():
+		for pin in channel_data['pins']:
+			assert pin['channel_id'] == channel_id
+			message = client.get_message(pin['channel_id'], pin['message_id'])
+			channel_pins[channel_data['name']].append(message)
+
+	with open('pins/index.jinja2', 'r') as f:
+		template = jinja2.Template(f.read())
+	with open('pins/index.html', 'w') as f:
+		stream = template.stream({'channel_pins': channel_pins})
+		stream.enable_buffering()
+		stream.dump(f)
 
 if __name__ == '__main__':
 	main()
