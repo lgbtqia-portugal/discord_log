@@ -82,6 +82,10 @@ def hydrate():
 def render():
 	with open('pins_hydrated.json', 'r') as f:
 		channel_pins = json.load(f)
+	for channel in list(channel_pins.keys()):
+		if len(channel_pins[channel]) == 0:
+			del channel_pins[channel]
+
 	with open('pins/index.jinja2', 'r') as f:
 		template = jinja2.Template(f.read())
 	with open('pins/index.html', 'w') as f:
