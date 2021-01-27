@@ -4,3 +4,4 @@ __pycache__
 /emoji_stats.json
 /emoji_user_stats.json
 /users.json
+/pins.json
