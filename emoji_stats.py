@@ -93,7 +93,7 @@ def iter_messages(client, guild_id):
 			continue
 		print('#' + channel['name'])
 		try:
-			yield from client.iter_messages(channel['id'], 662193114538311693) # 2020-01-01
+			yield from client.iter_messages(channel['id'], 794475911659388927) # 2021-01-01
 		except requests.exceptions.HTTPError as e:
 			if e.response.status_code != 403:
 				raise
