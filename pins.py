@@ -71,8 +71,14 @@ def hydrate():
 			for pin in channel_data['pins']:
 				assert pin['channel_id'] == channel_id
 				if pin['message_id'] not in hydrated_message_ids:
-					message = client.get_message(pin['channel_id'], pin['message_id'])
-					channel_messages.append(message)
+					try:
+						message = client.get_message(pin['channel_id'], pin['message_id'])
+						channel_messages.append(message)
+					except requests.exceptions.HTTPError as e:
+						if e.response.status_code == 404:
+							print(e, 'skipping')
+						else:
+							raise
 	except KeyboardInterrupt:
 		print('caught ^C')
 	finally:
