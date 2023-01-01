@@ -79,7 +79,7 @@ def render():
 	top_user_ids = [user_id for user_id, _ in user_overall_stats.most_common(20)]
 	top_users = {user_id: users[user_id] for user_id in top_user_ids}
 
-	top_emojis = {emoji: emoji_stats[emoji] for emoji, _ in emojis.most_common(100)}
+	top_emojis = {emoji: emoji_stats[emoji] for emoji, _ in emojis.most_common(250)}
 
 	with open('emoji_user_stats.json', 'w') as f:
 		json.dump({
